@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bookify.Domain.Abstraction;
+using Bookify.Domain.Abstractions;
 using Bookify.Domain.Common;
 
-namespace Bookify.Domain.Apartment
+namespace Bookify.Domain.Apartments
 {
     public sealed class Apartment:Entity
     {
@@ -30,7 +30,7 @@ namespace Bookify.Domain.Apartment
 
         public Money CleaningFee { get; private set; }
         public Money Price { get; private set; }
-
+        public DateTime LastBookedOnUtc { get; internal set; }
         public Description Description { get;private set; }
         public Name Name { get; private set; }
         public Address Address { get; private set; }

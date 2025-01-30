@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bookify.Domain.Abstraction;
+using Bookify.Domain.Abstractions;
+using Bookify.Domain.Users.Events;
 
 namespace Bookify.Domain.Users
 {
     public sealed class User(Guid id) : Entity(id)
     {
-        private User(Guid id, LastName lastName, FirstName firstName, Email email) : this(id)
+        private User(Guid id, FirstName firstName, LastName lastName, Email email) : this(id)
         {
             LastName = lastName;
             FirstName = firstName;
@@ -22,7 +23,13 @@ namespace Bookify.Domain.Users
 
         public static User Create(FirstName firstName, LastName lastName, Email email)
         {
-            if(string.IsNullOrWhiteSpace(firstName.Value)||string.IsNullOrWhiteSpace(lastName.Value)||string.Format())
+
+            var user = new User(Guid.NewGuid(), firstName, lastName, email);
+
+            
+            user.RaiseDomainEvent(new UserCreatedDomainEvent(user.Id));
+
+            return user;
         }
 
     }

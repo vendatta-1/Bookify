@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.Contracts;
 
-namespace Bookify.Domain.Abstraction;
+namespace Bookify.Domain.Abstractions;
 
 /// <summary>
 /// this a value object-base for classes implementation for value objects data-types
