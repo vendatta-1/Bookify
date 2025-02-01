@@ -1,4 +1,5 @@
 ﻿using Bookify.Application.Abstractions.Clock;
+using Bookify.Application.Abstractions.Data;
 using Bookify.Application.Abstractions.Email;
 using Bookify.Domain.Abstractions;
 using Bookify.Domain.Apartments;
@@ -39,7 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IUnitOfWork>(ser => ser.GetRequiredService<ApplicationDbContext>());
 
-        services.AddSingleton<SqlConnectionFactory>(_ =>
+        services.AddSingleton<ISqlConnectionFactory>(_ =>
             new SqlConnectionFactory(connectionString, new LoggerFactory().CreateLogger<SqlConnectionFactory>())
         );
 

@@ -1,17 +1,22 @@
 ﻿
 
+using Bookify.Application.Abstractions.Exceptions;
 using Bookify.Domain.Abstractions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Data;
 
 namespace Bookify.Infrastructure.Data
 {
     public class ApplicationDbContext : DbContext, IUnitOfWork
     {
         private IPublisher Publisher { get; }
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IPublisher publisher) : base(options)
+        private ILogger<ApplicationDbContext> Logger { get; }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IPublisher publisher, ILogger<ApplicationDbContext> logger) : base(options)
         {
             Publisher = publisher;
+            Logger = logger;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,11 +28,21 @@ namespace Bookify.Infrastructure.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var result = await base.SaveChangesAsync(cancellationToken);
+            try
+            {
+                var result = await base.SaveChangesAsync(cancellationToken);
 
-            await PublishDomainEvents();
+                await PublishDomainEvents();
 
-            return result;
+                return result;
+
+            }
+            catch (DBConcurrencyException e)
+            {
+                Logger.LogError(e, e.Message);
+                throw new ConcurrencyException("concurrency exception occured while try to save changes see inner Exception for more details", e);
+            }
+
 
         }
 

@@ -34,6 +34,8 @@ namespace Bookify.Infrastructure.Configurations
                 priceBuilder.Property(x => x.Currency)
                     .HasConversion(currency => currency.CurrencyCode, code => Currency.FromCode(code));
             });
+            //use shadow prop to map it into db to (use when there is multiple calls at the same time to the same Apartment)
+            builder.Property<uint>("Version").IsRowVersion();
 
         }
     }

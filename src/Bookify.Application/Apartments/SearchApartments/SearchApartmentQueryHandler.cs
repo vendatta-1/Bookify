@@ -19,6 +19,12 @@ namespace Bookify.Application.Apartments.SearchApartments
 
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        public SearchApartmentQueryHandler(ISqlConnectionFactory connectionFactory)
+        {
+            _connectionFactory = connectionFactory;
+        }
+
+
         public async Task<Result<IReadOnlyList<ApartmentResponse>>> Handle(SearchApartmentQuery request,
             CancellationToken cancellationToken)
         {
@@ -29,7 +35,7 @@ namespace Bookify.Application.Apartments.SearchApartments
 
             using var connection = _connectionFactory.CreateConnection();
 
-            const string sql = """
+            const string sql = $"""
                                SELECT
                                    a.id AS Id,
                                    a.name AS Name,
@@ -48,13 +54,14 @@ namespace Bookify.Application.Apartments.SearchApartments
                                    FROM bookings AS b
                                    WHERE
                                        b.apartment_id = a.id AND
-                                       b.duration_start <= @EndDate AND
-                                       b.duration_end >= @StartDate AND
+                                       b.duration_start_date <= CAST( @EndDate as date )  AND
+                                       b.duration_end_date >=CAST( @StartDate AS DATE) AND
                                        b.status = ANY
                                        (@ActiveBookingStatuses)
                                )
                                """;
-
+            var endDate = request.EndDate.ToDateTime(TimeOnly.MinValue);
+            var startDate = request.StartDate.ToDateTime(TimeOnly.MinValue);
             var apartment = await connection.QueryAsync<ApartmentResponse, AddressResponse, ApartmentResponse>(sql, (
                 (response, addressResponse) =>
                 {
@@ -63,8 +70,8 @@ namespace Bookify.Application.Apartments.SearchApartments
                     return response;
                 }), new
                 {
-                    request.StartDate,
-                    request.EndDate,
+                    startDate,
+                    endDate,
                     ActiveBookingStatuses
                 }, splitOn: "Country");
 

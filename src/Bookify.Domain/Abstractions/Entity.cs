@@ -11,6 +11,11 @@
             Id = id;
             _events = new List<IDomainEvent>();
         }
+
+        protected Entity()
+        {
+
+        }
         public int CompareTo(Entity? other)
         {
             if (other == null) return 1;

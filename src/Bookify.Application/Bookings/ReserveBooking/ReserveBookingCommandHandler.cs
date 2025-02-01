@@ -1,4 +1,5 @@
 ﻿using Bookify.Application.Abstractions.Clock;
+using Bookify.Application.Abstractions.Exceptions;
 using Bookify.Application.Abstractions.Messaging;
 using Bookify.Domain.Abstractions;
 using Bookify.Domain.Apartments;
@@ -33,13 +34,15 @@ namespace Bookify.Application.Bookings.ReserveBooking
             var apartment = await _apartmentRepository.GetByIdAsync(request.ApartmentId, cancellationToken);
             if (apartment is null)
             {
-                return Result.Failure<Guid>(new Error(ErrorCode.NotFound.ToString(), ErrorMessages.GetMessage(ErrorCode.NotFound)));
+                return Result.Failure<Guid>(new Error(ErrorCode.NotFound.ToString(),
+                    ErrorMessages.GetMessage(ErrorCode.NotFound)));
             }
 
             var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
             if (user is null)
             {
-                return Result.Failure<Guid>(new Error(ErrorCode.NotFound.ToString(), ErrorMessages.GetMessage(ErrorCode.NotFound)));
+                return Result.Failure<Guid>(new Error(ErrorCode.NotFound.ToString(),
+                    "The user is not register yet in the system"));
 
             }
 
@@ -48,22 +51,31 @@ namespace Bookify.Application.Bookings.ReserveBooking
 
             if (await _bookingRepository.IsOverlappingAsync(apartment, duration, cancellationToken))
             {
-                return Result.Failure<Guid>(new Error(ErrorCode.RecordAlreadyExists.ToString(), "U try to overlap an existing Booking"));
+                return Result.Failure<Guid>(new Error(ErrorCode.RecordAlreadyExists.ToString(),
+                    "U try to overlap an existing Booking"));
             }
 
+            try
+            {
 
-            var booking = Booking.Reserve(
-                apartment,
-                request.UserId,
-                duration,
-                _dateTimeProvider.UtcNow,
-                _pricingService);
+                var booking = Booking.Reserve(
+                    apartment,
+                    request.UserId,
+                    duration,
+                    _dateTimeProvider.UtcNow,
+                    _pricingService);
 
-            ///this cause a race condition problem by using optemisitc looking to the database
+                //this cause a race condition problem by using optimistic looking to the database
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                return booking.Id;
 
-            return booking.Id;
+            }
+            catch (ConcurrencyException e)
+            {
+                return Result.Failure<Guid>(BookingErrors.Overlap);
+            }
+
 
         }
     }
